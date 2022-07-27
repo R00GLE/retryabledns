@@ -203,6 +203,11 @@ func (c *Client) CAA(host string) (*DNSData, error) {
 	return c.QueryMultiple(host, []uint16{dns.TypeCAA})
 }
 
+// SSHFP helper function
+func (c *Client) SSHFP(host string) (*DNSData, error) {
+	return c.QueryMultiple(host, []uint16{dns.TypeSSHFP})
+}
+
 // QueryMultiple sends a provided dns request and return the data
 func (c *Client) QueryMultiple(host string, requestTypes []uint16) (*DNSData, error) {
 	return c.queryMultiple(host, requestTypes, nil)
@@ -522,6 +527,7 @@ type DNSData struct {
 	NS             []string   `json:"ns,omitempty"`
 	TXT            []string   `json:"txt,omitempty"`
 	CAA            []string   `json:"caa,omitempty"`
+	SSHFP          []string   `json:"sshfp,omitempty"`
 	AllRecords     []string   `json:"all,omitempty"`
 	Raw            string     `json:"raw,omitempty"`
 	HasInternalIPs bool       `json:"has_internal_ips,omitempty"`
@@ -561,6 +567,8 @@ func (d *DNSData) ParseFromRR(rrs []dns.RR) error {
 			d.MX = append(d.MX, trimChars(recordType.Mx))
 		case *dns.CAA:
 			d.CAA = append(d.CAA, trimChars(recordType.Value))
+		case *dns.SSHFP:
+			d.SSHFP = append(d.SSHFP, trimChars(recordType.Value))
 		case *dns.TXT:
 			for _, txt := range recordType.Txt {
 				d.TXT = append(d.TXT, trimChars(txt))
@@ -596,7 +604,7 @@ func (d *DNSData) ParseFromEnvelopeChan(envChan chan *dns.Envelope) error {
 }
 
 func (d *DNSData) contains() bool {
-	return len(d.A) > 0 || len(d.AAAA) > 0 || len(d.CNAME) > 0 || len(d.MX) > 0 || len(d.NS) > 0 || len(d.PTR) > 0 || len(d.TXT) > 0 || len(d.SOA) > 0 || len(d.CAA) > 0
+	return len(d.A) > 0 || len(d.AAAA) > 0 || len(d.CNAME) > 0 || len(d.MX) > 0 || len(d.NS) > 0 || len(d.PTR) > 0 || len(d.TXT) > 0 || len(d.SOA) > 0 || len(d.CAA) || len(d.SSHFP) > 0
 }
 
 // JSON returns the object as json string
@@ -620,6 +628,7 @@ func (d *DNSData) dedupe() {
 	d.NS = sliceutil.Dedupe(d.NS)
 	d.TXT = sliceutil.Dedupe(d.TXT)
 	d.CAA = sliceutil.Dedupe(d.CAA)
+	d.SSHFP= sliceutil.Dedupe(d.SSHFP
 	d.AllRecords = sliceutil.Dedupe(d.AllRecords)
 }
 
